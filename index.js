@@ -1,11 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.Port || 5000;
 
-
+//require('crypto').randomBytes(64).toString('hex')
 //middleware
 app.use(cors());
 app.use(express.json());
@@ -29,6 +31,33 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
+
+    const usersCollection = client.db('easyPay').collection('users');
+
+     //jwt api
+     app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.DB_KEY, { expiresIn: '1h' });
+      res.send({ token });
+    })
+
+    app.post('/users', async (req,res) => {
+      const { name, pin, mobileNumber, email,role } = req.body;
+      const hashedPin = await bcrypt.hash(pin, 10);
+      const newUser = {
+        name,
+        pin: hashedPin,
+        mobileNumber,
+        email,
+        role,
+        status: 'pending', // Initial status is pending
+        balance: 0, // Initial balance
+      };
+          const result = await usersCollection.insertOne(newUser);
+
+
+          res.send(result);
+    })
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
