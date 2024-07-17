@@ -54,9 +54,28 @@ async function run() {
         balance: 0, // Initial balance
       };
           const result = await usersCollection.insertOne(newUser);
-
-
           res.send(result);
+    })
+
+    //login
+    app.post('/login', async (req,res) => {
+      const {phone , pin} = req.body;
+
+      //find user in usersCollection
+      const query = {mobileNumber:phone}
+      const user = await usersCollection.findOne(query);
+
+      //if user is not found 
+      if(!user){
+        return res.status(404).send({message: "User is not found"});
+      }
+      // verify PIN
+      const isPinValid = await bcrypt.compare(pin, user.pin);
+
+      if(!isPinValid){
+        return res.status(404).send({message: "Invalid Credential"});
+      }
+      res.send({message:"validUser"});
     })
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
