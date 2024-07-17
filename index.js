@@ -75,7 +75,19 @@ async function run() {
       if(!isPinValid){
         return res.status(404).send({message: "Invalid Credential"});
       }
-      res.send({message:"validUser"});
+      res.send(user);
+    })
+    //userExistence Control
+    app.post('/userExistence', async (req,res) => {
+            const {email} = req.body;
+            const query = {email: email};
+            const userExist = await usersCollection.findOne(query);
+            if(!userExist){
+              return res.status(404).send({message: "Invalid Credential"});
+            }
+            if(userExist.role === 'UserPending'){
+               res.send({user: true}) 
+            }
     })
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
